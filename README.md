@@ -5,7 +5,7 @@
     Cada projeto é independente e explora criatividade, visual, som, interação ou simulação.<br>
   </p>
   <p align="center">
-    <img src="printscreen.png" alt="html10ideas portal" width="220"/>
+    <img src="printscreen.png" alt="html10ideas portal" width="660"/>
   </p>
 </p>
 
