@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerador de Universos Aleatórios</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root {
+      --bg: #101629;
+      --card: #1d2238;
+      --accent: #61dafb;
+      --planet: #ffd966;
+      --star: #fff8dc;
+      --civilization: #baffc9;
+    }
+    body {
+      background: radial-gradient(ellipse at bottom, #23243a 0%, var(--bg) 100%);
+      color: #f7f7fa;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    header {
+      text-align: center;
+      padding: 2rem 1rem 1rem 1rem;
+    }
+    header h1 {
+      font-size: 2.7rem;
+      letter-spacing: 1px;
+      color: var(--accent);
+      margin-bottom: 0.4rem;
+    }
+    header p {
+      color: #b8b9cc;
+      font-size: 1.1rem;
+      margin-top: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: rgba(29,34,56,0.96);
+      border-radius: 2.1rem;
+      padding: 2.2rem 1.5rem;
+      box-shadow: 0 8px 32px rgba(20,20,60,0.3);
+    }
+    #universeMap {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin: 1.5rem 0;
+    }
+    .star-system {
+      background: #23253e;
+      border-radius: 1.1rem;
+      padding: 1.1rem 1.2rem;
+      box-shadow: 0 2px 12px #0004;
+      min-width: 230px;
+      max-width: 330px;
+      flex: 1 1 270px;
+      margin: 0.5rem 0;
+      position: relative;
+      border: 2px solid var(--star);
+    }
+    .star-name {
+      color: var(--star);
+      font-weight: bold;
+      font-size: 1.3rem;
+      margin-bottom: 0.3rem;
+      text-shadow: 0 2px 8px #fff4;
+    }
+    .planets-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0.7rem 0 0 0;
+    }
+    .planet-name {
+      color: var(--planet);
+      font-size: 1.05rem;
+      font-weight: bold;
+    }
+    .planet-desc {
+      font-size: 0.98rem;
+      color: #e9eaee;
+      margin-bottom: 0.1rem;
+    }
+    .civilization {
+      color: var(--civilization);
+      font-style: italic;
+      font-size: 0.98rem;
+    }
+    .mini-map {
+      background: #181e29;
+      border-radius: 12px;
+      margin: 1.5rem auto 0.7rem auto;
+      width: 260px;
+      height: 90px;
+      display: block;
+      box-shadow: 0 2px 12px #0004;
+      position: relative;
+    }
+    .btn-generate {
+      background: var(--accent);
+      color: #12163a;
+      font-size: 1.1rem;
+      padding: 0.8rem 2.3rem;
+      border: none;
+      border-radius: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 1.6rem auto 0 auto;
+      display: block;
+      box-shadow: 0 2px 12px #51a7c6a0;
+      transition: transform 0.08s;
+    }
+    .btn-generate:hover {
+      transform: scale(1.05);
+      background: #77f3fd;
+    }
+    .desc-poetica {
+      color: #ffe5ba;
+      font-size: 1.09rem;
+      margin: 1.5rem auto 0.7rem auto;
+      text-align: center;
+      max-width: 600px;
+      font-style: italic;
+      letter-spacing: 0.2px;
+      line-height: 1.5;
+      text-shadow: 0 2px 8px #201a2b99;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 1.2rem 0.5rem; }
+      .mini-map { width: 97vw; min-width: 90vw; }
+      .star-system { min-width: 98vw; max-width: 99vw;}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gerador de Universos Aleatórios</h1>
+    <p>Clique abaixo para explorar novos universos, planetas e civilizações criadas por pura imaginação digital.</p>
+  </header>
+  <div class="container">
+    <canvas id="miniMap" class="mini-map"></canvas>
+    <div id="universeMap"></div>
+    <div class="desc-poetica" id="descPoetica"></div>
+    <button class="btn-generate" onclick="generateUniverse()">Gerar Universo</button>
+  </div>
+  <script>
+    // Dados básicos
+    const STAR_PREFIXES = ["Zeta", "Omega", "Alpha", "Tau", "Epsilon", "Sigma", "Delta", "Nova", "Gamma", "Aurora", "Vega", "Lyra", "Zenith", "Quasar"];
+    const STAR_SUFFIXES = ["Prime", "Major", "Secundus", "Minor", "VII", "IX", "III", "IV", "Nebula", "Core", "Belt", "Gate"];
+    const PLANET_PREFIXES = ["Lumin", "Crys", "Ther", "Aqua", "Orion", "Terra", "Soli", "Xen", "Vul", "Myst", "Argon", "Altair", "Polaris", "Seren"];
+    const PLANET_SUFFIXES = ["ia", "us", "on", "ara", "ion", "is", "os", "ium", "arae", "ora", "ea"];
+    const CIV_PREFIXES = ["Império", "República", "Clã", "Coletivo", "Ordem", "Dinastia", "Aliança", "Federação", "Guilda", "Congregação", "Colônia"];
+    const CIV_SUFFIXES = ["de Azuris", "de Solaris", "do Vórtice", "da Aurora", "do Véu", "de Argon", "de Myrrh", "do Horizonte", "de Prisma", "do Abismo"];
+    const PLANET_TYPES = [
+      "gélido e azul",
+      "volcânico e tempestuoso",
+      "repleto de oceanos reluzentes",
+      "coberto por florestas bioluminescentes",
+      "com desertos de cristal",
+      "envolto em névoa dourada",
+      "cercado por anéis multicoloridos",
+      "com atmosferas púrpuras e auroras constantes",
+      "flutuante entre asteroides",
+      "onde chove diamantes",
+      "que pulsa com luz própria",
+      "cheio de ruínas ancestrais",
+    ];
+    const POETIC_PHRASES = [
+      "Na vastidão, novas estrelas nascem como pensamentos esquecidos.",
+      "Cada planeta abriga segredos que só o tempo cósmico pode desvendar.",
+      "Civilizações florescem, desaparecem, mas as lendas ecoam para sempre.",
+      "Nebulosas dançam enquanto mundos colidem em silêncio eterno.",
+      "Neste universo, a imaginação é a única lei universal.",
+      "Na imensidão, até a menor centelha pode acender uma era de esplendor.",
+      "Ventos solares esculpem paisagens, histórias e futuros.",
+      "Olhe para cima: há infinitas histórias esperando para serem descobertas.",
+      "Aqui, as fronteiras não são limites, mas convites ao desconhecido.",
+    ];
+
+    function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+    function genStarName() {
+      return rand(STAR_PREFIXES) + " " + rand(STAR_SUFFIXES);
+    }
+
+    function genPlanetName() {
+      return rand(PLANET_PREFIXES) + rand(PLANET_SUFFIXES);
+    }
+
+    function genCivilization() {
+      return rand(CIV_PREFIXES) + " " + rand(CIV_SUFFIXES);
+    }
+
+    function genPlanet() {
+      return {
+        name: genPlanetName(),
+        type: rand(PLANET_TYPES),
+        civilization: (Math.random() < 0.6) ? genCivilization() : null,
+      }
+    }
+
+    function genStarSystem() {
+      let planetsCount = randInt(1, 4);
+      let planets = [];
+      for(let i = 0; i < planetsCount; i++) planets.push(genPlanet());
+      return {
+        star: genStarName(),
+        planets: planets
+      };
+    }
+
+    function genUniverse() {
+      let starCount = randInt(4, 7);
+      let systems = [];
+      for(let i = 0; i < starCount; i++) systems.push(genStarSystem());
+      return systems;
+    }
+
+    function renderUniverse() {
+      const systems = genUniverse();
+      const universeDiv = document.getElementById('universeMap');
+      universeDiv.innerHTML = '';
+      systems.forEach((sys, idx) => {
+        let div = document.createElement('div');
+        div.className = 'star-system';
+        div.innerHTML = `
+          <div class="star-name">★ ${sys.star}</div>
+          <ul class="planets-list">
+            ${sys.planets.map(planet => `
+              <li>
+                <span class="planet-name">${planet.name}</span> — 
+                <span class="planet-desc">${planet.type}</span>
+                ${planet.civilization ? `<div class="civilization">Civilização: ${planet.civilization}</div>` : ''}
+              </li>
+            `).join('')}
+          </ul>
+        `;
+        universeDiv.appendChild(div);
+      });
+
+      // Poetic description
+      document.getElementById('descPoetica').textContent = rand(POETIC_PHRASES);
+
+      // Draw mini-map
+      drawMiniMap(systems);
+    }
+
+    function drawMiniMap(systems) {
+      const canvas = document.getElementById('miniMap');
+      const w = canvas.width = canvas.offsetWidth;
+      const h = canvas.height = canvas.offsetHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0,0,w,h);
+
+      // Space bg
+      ctx.fillStyle = "#0b0e19";
+      ctx.fillRect(0,0,w,h);
+
+      // Draw random nebula blobs
+      for(let i=0;i<3;i++){
+        ctx.beginPath();
+        let x = randInt(40,w-40), y = randInt(25,h-25), r = randInt(28,45);
+        ctx.arc(x,y,r,0,Math.PI*2);
+        ctx.fillStyle = "rgba("+(100+randInt(0,80))+","+randInt(40,130)+",255,0.12)";
+        ctx.fill();
+      }
+
+      // Draw stars
+      systems.forEach((sys, i) => {
+        let x = 50 + i*(w-100)/(systems.length-1 || 1);
+        let y = h/2 + Math.sin(i+Math.random())*18 + randInt(-7,7);
+        ctx.beginPath();
+        ctx.arc(x,y,8,0,Math.PI*2);
+        ctx.fillStyle = "#fff8dc";
+        ctx.shadowColor = "#ffe";
+        ctx.shadowBlur = 9;
+        ctx.fill();
+
+        // Planets
+        let angleStep = Math.PI/(sys.planets.length+1);
+        sys.planets.forEach((planet,j) => {
+          let a = Math.PI + (j+1)*angleStep;
+          let px = x + Math.cos(a)*randInt(20,36);
+          let py = y + Math.sin(a)*randInt(16,26);
+          ctx.beginPath();
+          ctx.arc(px, py, 4, 0, Math.PI*2);
+          ctx.fillStyle = "#ffd966";
+          ctx.shadowBlur = 0;
+          ctx.fill();
+        });
+        ctx.shadowBlur = 0;
+      });
+
+      // Add random twinkle stars
+      for(let i=0;i<15;i++){
+        ctx.beginPath();
+        ctx.arc(randInt(10,w-10), randInt(10,h-10), randInt(1,2), 0, Math.PI*2);
+        ctx.fillStyle = "rgba(255,255,255,"+Math.random()*0.8+")";
+        ctx.fill();
+      }
+    }
+
+    function generateUniverse() {
+      renderUniverse();
+    }
+
+    // Inicialização
+    window.onload = generateUniverse;
+    window.onresize = () => setTimeout(drawMiniMapAfterResize, 400);
+    function drawMiniMapAfterResize() {
+      // Redraw with last universe (simplified for demo, simply re-gen)
+      generateUniverse();
+    }
+  </script>
+</body>
+</html>

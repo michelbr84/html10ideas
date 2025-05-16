@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Museu Interativo de Obras Digitais</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root {
+      --bg: #191925;
+      --panel: #23223a;
+      --accent: #c077f3;
+      --btn: #b9ffd6;
+      --btn-txt: #23223a;
+      --canvas: #121221;
+    }
+    body {
+      background: var(--bg);
+      color: #f4f5fa;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    header {
+      text-align: center;
+      padding: 2rem 1rem 0.7rem 1rem;
+    }
+    header h1 {
+      font-size: 2.5rem;
+      color: var(--accent);
+      margin-bottom: 0.4rem;
+    }
+    header p {
+      color: #c3bbd4;
+      font-size: 1.08rem;
+      margin-top: 0;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: rgba(35,34,58,0.95);
+      border-radius: 2rem;
+      padding: 2rem 1.5rem 2.5rem 1.5rem;
+      box-shadow: 0 8px 32px rgba(40,30,60,0.18);
+      margin-top: 2.3rem;
+      min-height: 550px;
+    }
+    #artTitle {
+      font-size: 1.35rem;
+      font-weight: bold;
+      color: var(--accent);
+      margin: 1rem 0 0.2rem 0;
+      text-align: center;
+    }
+    #artDesc {
+      text-align: center;
+      color: #b0e4f3;
+      font-size: 1.05rem;
+      font-style: italic;
+      margin-bottom: 1rem;
+      margin-top: 0.2rem;
+    }
+    #artCanvas {
+      display: block;
+      background: var(--canvas);
+      margin: 0 auto 1rem auto;
+      border-radius: 1.2rem;
+      box-shadow: 0 2px 24px #0006;
+      border: 2px solid #36224a;
+      transition: background 0.5s;
+    }
+    .art-controls {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .art-btn {
+      background: var(--btn);
+      color: var(--btn-txt);
+      border: none;
+      font-weight: bold;
+      font-size: 1.05rem;
+      border-radius: 1.2rem;
+      margin: 0 0.5rem;
+      padding: 0.55rem 1.6rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #85e1c4a1;
+      transition: background 0.1s, transform 0.08s;
+    }
+    .art-btn.selected, .art-btn:hover {
+      background: var(--accent);
+      color: #fff;
+      transform: scale(1.06);
+    }
+    .footer {
+      text-align: center;
+      font-size: 0.98rem;
+      color: #d9caff77;
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 1rem 0.2rem 1.4rem 0.2rem; }
+      #artCanvas { width: 99vw !important; min-width: 96vw !important; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Museu Interativo de Obras Digitais</h1>
+    <p>Explore obras digitais únicas, criadas em tempo real — interaja, experimente e inspire-se.</p>
+  </header>
+  <div class="container">
+    <div class="art-controls" id="artControls"></div>
+    <div id="artTitle"></div>
+    <div id="artDesc"></div>
+    <canvas id="artCanvas" width="600" height="400"></canvas>
+  </div>
+  <div class="footer">
+    Clique nas obras, movimente o mouse ou pressione teclas — cada experiência é única!<br>
+    &copy; 2025 Museu Interativo Digital
+  </div>
+  <script>
+    // Definição das Obras Digitais (array de objetos)
+    const artworks = [
+      {
+        title: "Fluxo Infinito",
+        desc: "Linhas de energia percorrem o espaço. Interaja com o mouse: o traço segue sua imaginação.",
+        init(ctx, state) {
+          ctx.lineWidth = 1.6;
+          state.points = [];
+        },
+        render(ctx, state, width, height, mouse) {
+          ctx.clearRect(0,0,width,height);
+          // Fundo gradiente animado
+          const grad = ctx.createLinearGradient(0, 0, width, height);
+          grad.addColorStop(0, "#13133d");
+          grad.addColorStop(1, "#8a77ff18");
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, width, height);
+
+          // Guarda a trilha do mouse
+          if (mouse.pressed) {
+            state.points.push({x: mouse.x, y: mouse.y});
+            if (state.points.length > 200) state.points.shift();
+          } else if (state.points.length > 1) {
+            state.points.shift();
+          }
+          // Traça a linha animada
+          ctx.beginPath();
+          state.points.forEach((p, i) => {
+            if(i===0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+          });
+          ctx.strokeStyle = "#c077f3";
+          ctx.shadowColor = "#c077f3";
+          ctx.shadowBlur = 12;
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+
+          // Pontos
+          state.points.forEach((p,i)=>{
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 2.3+Math.sin(i/6+state.t/7)*1.5, 0, 2*Math.PI);
+            ctx.fillStyle = "#b9ffd6";
+            ctx.fill();
+          });
+          state.t++;
+        }
+      },
+      {
+        title: "Galáxia Generativa",
+        desc: "Uma galáxia viva: arraste para girar, use a roda do mouse para afastar ou aproximar.",
+        init(ctx, state) {
+          state.angle = 0;
+          state.zoom = 1;
+          state.stars = [];
+          for(let i=0;i<540;i++) {
+            let r = 30 + 160*Math.pow(Math.random(),0.82);
+            let a = Math.random()*2*Math.PI;
+            let spread = 0.32 * Math.sin(r/70);
+            let angle = a + spread * (Math.random()-0.5);
+            state.stars.push({
+              x: r*Math.cos(angle),
+              y: r*Math.sin(angle),
+              c: `hsl(${210+Math.random()*100},70%,${75-Math.random()*30}%)`
+            });
+          }
+          state.t = 0;
+        },
+        render(ctx, state, width, height, mouse) {
+          ctx.clearRect(0,0,width,height);
+          ctx.save();
+          ctx.translate(width/2, height/2);
+          ctx.scale(state.zoom,state.zoom);
+          ctx.rotate(state.angle);
+          state.stars.forEach(star => {
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, 1.2 + Math.random()*0.6, 0, 2*Math.PI);
+            ctx.fillStyle = star.c;
+            ctx.shadowColor = star.c;
+            ctx.shadowBlur = 6;
+            ctx.globalAlpha = 0.7 + 0.25*Math.sin(state.t/30+star.x/110);
+            ctx.fill();
+          });
+          ctx.globalAlpha = 1;
+          ctx.shadowBlur = 0;
+          ctx.restore();
+          state.t++;
+        },
+        interact(evt, state, mouse) {
+          if(evt.type === "mousemove" && evt.buttons) {
+            state.angle += (evt.movementX)/220;
+          }
+        },
+        wheel(evt, state) {
+          state.zoom *= (evt.deltaY > 0) ? 0.95 : 1.05;
+          if(state.zoom<0.2) state.zoom = 0.2;
+          if(state.zoom>3) state.zoom = 3;
+        }
+      },
+      {
+        title: "Poesia Visual Aleatória",
+        desc: "Clique para inspirar: versos flutuam e se transformam em poesia efêmera.",
+        init(ctx, state) {
+          state.phrases = [
+            "O silêncio dança na luz azul.",
+            "Fragmentos de sonhos atravessam o tempo.",
+            "A eternidade cabe em um instante.",
+            "Palavras suspensas, ecos de cor.",
+            "A noite respira novas possibilidades.",
+            "Incertezas constroem constelações.",
+            "O vento esculpe ideias no vazio."
+          ];
+          state.versos = [];
+          state.t = 0;
+          for(let i=0;i<4;i++) state.versos.push(randomVerse(state));
+        },
+        render(ctx, state, width, height) {
+          ctx.clearRect(0,0,width,height);
+          ctx.fillStyle = "#1e1e32";
+          ctx.fillRect(0,0,width,height);
+          state.versos.forEach((v,i)=>{
+            ctx.save();
+            ctx.globalAlpha = v.alpha;
+            ctx.font = `italic 1.05rem 'Segoe UI',Arial`;
+            ctx.fillStyle = "#fff8db";
+            ctx.fillText(v.text, v.x, v.y);
+            ctx.restore();
+            v.x += v.dx;
+            v.y += v.dy;
+            v.alpha -= 0.003;
+          });
+          state.versos = state.versos.filter(v => v.alpha > 0.03);
+          state.t++;
+        },
+        click(evt, state, mouse) {
+          if(state.versos.length<10) state.versos.push(randomVerse(state));
+        }
+      },
+      {
+        title: "Quadrados Sonoros",
+        desc: "Pressione as teclas A S D F G para criar sons e padrões. Arte visual responde ao som.",
+        init(ctx, state) {
+          state.keys = {65:0,83:0,68:0,70:0,71:0};
+          state.notes = [220, 261.6, 329.6, 392, 523.2];
+          state.ctxs = [];
+          if(window.AudioContext) {
+            state.audio = new (window.AudioContext || window.webkitAudioContext)();
+            state.osc = [];
+            for(let i=0;i<5;i++) state.osc[i]=null;
+          }
+          state.t = 0;
+        },
+        render(ctx, state, width, height) {
+          ctx.clearRect(0,0,width,height);
+          for(let i=0;i<5;i++) {
+            let val = state.keys[[65,83,68,70,71][i]] || 0;
+            let size = 60 + val*80 + 24*Math.sin(state.t/12+i);
+            ctx.beginPath();
+            ctx.rect(60+i*100, height/2-size/2, 80, size);
+            ctx.fillStyle = `hsl(${180+i*36},90%,${50+val*35}%)`;
+            ctx.shadowBlur = val*16;
+            ctx.shadowColor = "#fff";
+            ctx.fill();
+            ctx.shadowBlur = 0;
+          }
+          state.t++;
+        },
+        key(evt, state) {
+          const idx = [65,83,68,70,71].indexOf(evt.keyCode);
+          if(idx!==-1 && evt.type==="keydown") {
+            state.keys[evt.keyCode]=1;
+            if(state.audio && !state.osc[idx]) {
+              state.osc[idx]=state.audio.createOscillator();
+              state.osc[idx].type='triangle';
+              state.osc[idx].frequency.value=state.notes[idx];
+              let gain=state.audio.createGain();
+              gain.gain.value=0.13;
+              state.osc[idx].connect(gain).connect(state.audio.destination);
+              state.osc[idx].start();
+              state.osc[idx].gain=gain;
+            }
+          } else if(idx!==-1 && evt.type==="keyup") {
+            state.keys[evt.keyCode]=0;
+            if(state.audio && state.osc[idx]) {
+              state.osc[idx].gain.gain.linearRampToValueAtTime(0,state.audio.currentTime+0.13);
+              state.osc[idx].stop(state.audio.currentTime+0.15);
+              state.osc[idx]=null;
+            }
+          }
+        }
+      }
+    ];
+
+    // Helper para poesia visual
+    function randomVerse(state) {
+      return {
+        text: state.phrases[Math.floor(Math.random()*state.phrases.length)],
+        x: 60+Math.random()*420,
+        y: 70+Math.random()*240,
+        dx: -0.6+Math.random()*1.2,
+        dy: -0.1+Math.random()*0.25,
+        alpha: 0.95+Math.random()*0.1
+      };
+    }
+
+    // Estado global
+    let current = 0, state = {};
+    const canvas = document.getElementById("artCanvas");
+    const ctx = canvas.getContext("2d");
+    let width = canvas.width, height = canvas.height;
+    let mouse = {x:0, y:0, pressed:false};
+
+    // Setup botões
+    function setupControls() {
+      const controls = document.getElementById("artControls");
+      controls.innerHTML = "";
+      artworks.forEach((art, i) => {
+        let btn = document.createElement("button");
+        btn.textContent = art.title;
+        btn.className = "art-btn" + (i === current ? " selected" : "");
+        btn.onclick = () => switchArt(i);
+        controls.appendChild(btn);
+      });
+    }
+
+    // Trocar obra
+    function switchArt(idx) {
+      current = idx;
+      state = {};
+      setupControls();
+      document.getElementById("artTitle").textContent = artworks[idx].title;
+      document.getElementById("artDesc").textContent = artworks[idx].desc;
+      resizeCanvas();
+      if(artworks[idx].init) artworks[idx].init(ctx, state);
+    }
+
+    // Resize responsivo
+    function resizeCanvas() {
+      if(window.innerWidth<650) {
+        width = canvas.width = Math.floor(window.innerWidth*0.97);
+        height = canvas.height = Math.floor(window.innerHeight*0.41);
+      } else {
+        width = canvas.width = 600;
+        height = canvas.height = 400;
+      }
+    }
+
+    window.onresize = () => {
+      resizeCanvas();
+      if(artworks[current].init) artworks[current].init(ctx, state);
+    };
+
+    // Loop principal
+    function animate() {
+      if(artworks[current].render) artworks[current].render(ctx, state, width, height, mouse);
+      requestAnimationFrame(animate);
+    }
+
+    // Interação mouse
+    canvas.addEventListener("mousedown", e=>mouse.pressed=true);
+    canvas.addEventListener("mouseup", e=>mouse.pressed=false);
+    canvas.addEventListener("mouseleave", e=>mouse.pressed=false);
+    canvas.addEventListener("mousemove", e=>{
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+      if(artworks[current].interact) artworks[current].interact(e, state, mouse);
+    });
+    canvas.addEventListener("click", e=>{
+      if(artworks[current].click) artworks[current].click(e, state, mouse);
+    });
+    canvas.addEventListener("wheel", e=>{
+      if(artworks[current].wheel) { e.preventDefault(); artworks[current].wheel(e, state, mouse);}
+    }, {passive:false});
+
+    // Interação teclado
+    window.addEventListener("keydown", e=>{
+      if(artworks[current].key) artworks[current].key(e,state,mouse);
+    });
+    window.addEventListener("keyup", e=>{
+      if(artworks[current].key) artworks[current].key(e,state,mouse);
+    });
+
+    // Inicialização
+    setupControls();
+    switchArt(0);
+    animate();
+  </script>
+</body>
+</html>

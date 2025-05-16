@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Teclado Musical Visual</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root {
+      --bg: #181d28;
+      --panel: #242a3c;
+      --accent: #92fcf4;
+      --white: #fff;
+      --black: #232831;
+      --active: #ffe075;
+      --visual1: #e0fffa;
+      --visual2: #89fff2;
+    }
+    body {
+      background: radial-gradient(ellipse at top, #232949 0%, var(--bg) 100%);
+      color: var(--white);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+    }
+    header {
+      text-align: center;
+      padding: 2.2rem 1rem 1.2rem 1rem;
+    }
+    header h1 {
+      font-size: 2.2rem;
+      color: var(--accent);
+      margin-bottom: 0.2rem;
+    }
+    header p {
+      color: #a4fcfa;
+      font-size: 1.07rem;
+      margin-top: 0;
+    }
+    .container {
+      max-width: 680px;
+      margin: 2.1rem auto 0 auto;
+      background: rgba(36,42,60,0.99);
+      border-radius: 1.7rem;
+      padding: 2.1rem 1.1rem 2.4rem 1.1rem;
+      box-shadow: 0 8px 32px #17253055;
+      min-height: 370px;
+    }
+    .keyboard {
+      display: flex;
+      justify-content: center;
+      align-items: end;
+      gap: 0.22rem;
+      margin-bottom: 2rem;
+      user-select: none;
+    }
+    .key {
+      width: 38px;
+      height: 170px;
+      background: var(--white);
+      border: 2.3px solid #aaa;
+      border-radius: 0.3rem 0.3rem 1.1rem 1.1rem;
+      margin: 0 0.01rem;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      font-size: 1.02rem;
+      color: #2e3360;
+      font-weight: bold;
+      box-shadow: 0 6px 22px #2223 0 1px 2px #fff2;
+      cursor: pointer;
+      transition: background 0.12s, box-shadow 0.15s, color 0.14s;
+      z-index: 1;
+    }
+    .key.active {
+      background: var(--active);
+      color: #b17f00;
+      box-shadow: 0 2px 26px #ffe07555;
+    }
+    .key-label {
+      margin-bottom: 0.5rem;
+      opacity: 0.84;
+      font-size: 0.97rem;
+    }
+    .key .note {
+      position: absolute;
+      bottom: 10px;
+      font-size: 0.93rem;
+      color: #1e2a2c;
+      opacity: 0.7;
+    }
+    .visual-canvas {
+      display: block;
+      background: #1d2135;
+      border-radius: 1.1rem;
+      margin: 0 auto 1.2rem auto;
+      box-shadow: 0 2px 24px #2224;
+      border: 2px solid #56d9d8;
+      width: 100%;
+      max-width: 620px;
+      height: 140px;
+      transition: background 0.5s;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 1rem 0.2rem 1.2rem 0.2rem; }
+      .keyboard { gap: 0.09rem; }
+      .key { width: 10vw; min-width: 23px; height: 90px; }
+      .visual-canvas { height: 60px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Teclado Musical Visual</h1>
+    <p>Toque notas com o teclado (A S D F G H J K L ; , .) ou clique nas teclas. Cada nota cria um efeito visual e sonoro único!</p>
+  </header>
+  <div class="container">
+    <canvas class="visual-canvas" id="visualCanvas" width="600" height="140"></canvas>
+    <div class="keyboard" id="keyboard"></div>
+  </div>
+  <script>
+    // Notas e mapeamento de teclas
+    const NOTES = [
+      { key: "A", code: 65, freq: 261.63, name: "C" },
+      { key: "S", code: 83, freq: 293.66, name: "D" },
+      { key: "D", code: 68, freq: 329.63, name: "E" },
+      { key: "F", code: 70, freq: 349.23, name: "F" },
+      { key: "G", code: 71, freq: 392.00, name: "G" },
+      { key: "H", code: 72, freq: 440.00, name: "A" },
+      { key: "J", code: 74, freq: 493.88, name: "B" },
+      { key: "K", code: 75, freq: 523.25, name: "C5" },
+      { key: "L", code: 76, freq: 587.33, name: "D5" },
+      { key: ";", code: 186, freq: 659.25, name: "E5" },
+      { key: ",", code: 188, freq: 698.46, name: "F5" },
+      { key: ".", code: 190, freq: 783.99, name: "G5" }
+    ];
+    // Render teclado
+    const kbDiv = document.getElementById("keyboard");
+    NOTES.forEach(note=>{
+      let d = document.createElement("div");
+      d.className = "key";
+      d.setAttribute("data-code", note.code);
+      d.setAttribute("data-freq", note.freq);
+      d.innerHTML = `<div class="key-label">${note.key}</div><div class="note">${note.name}</div>`;
+      kbDiv.appendChild(d);
+    });
+
+    // Áudio
+    let ctxAudio = null, activeOsc = {};
+    function playNote(freq, code) {
+      if (!window.AudioContext) return;
+      if (activeOsc[code]) return;
+      if (!ctxAudio) ctxAudio = new (window.AudioContext || window.webkitAudioContext)();
+      let o = ctxAudio.createOscillator();
+      let g = ctxAudio.createGain();
+      o.type = "sine";
+      o.frequency.value = freq;
+      g.gain.value = 0.18;
+      o.connect(g).connect(ctxAudio.destination);
+      o.start();
+      activeOsc[code] = {osc: o, gain: g};
+      // Envelope curta
+      g.gain.setValueAtTime(0.18, ctxAudio.currentTime);
+      g.gain.linearRampToValueAtTime(0.001, ctxAudio.currentTime + 0.32);
+      setTimeout(()=>{
+        if (activeOsc[code]) {
+          o.stop();
+          delete activeOsc[code];
+        }
+      }, 350);
+    }
+
+    // Visualização
+    const vis = document.getElementById("visualCanvas");
+    const vctx = vis.getContext("2d");
+    let effects = [];
+    function triggerVisual(idx) {
+      let x = (vis.width/NOTES.length)*idx + (vis.width/NOTES.length)/2;
+      let color = `hsl(${180+idx*28},95%,60%)`;
+      effects.push({x, t:0, color, idx});
+    }
+    function animateVisual() {
+      vctx.clearRect(0,0,vis.width,vis.height);
+      for (let i=effects.length-1;i>=0;i--) {
+        let e = effects[i];
+        let r = 16+e.t*1.2, alpha = Math.max(0,0.36-(e.t*0.04));
+        vctx.beginPath();
+        vctx.arc(e.x, vis.height/2, r, 0, Math.PI*2);
+        vctx.strokeStyle = e.color;
+        vctx.globalAlpha = alpha;
+        vctx.lineWidth = 8+Math.sin(e.t/2)*5;
+        vctx.stroke();
+        vctx.globalAlpha = 1;
+        // Inner pulse
+        vctx.beginPath();
+        vctx.arc(e.x, vis.height/2, 4+Math.sin(e.t/2)*2, 0, Math.PI*2);
+        vctx.fillStyle = e.color;
+        vctx.globalAlpha = alpha*1.3;
+        vctx.fill();
+        vctx.globalAlpha = 1;
+        e.t++;
+        if (e.t>15) effects.splice(i,1);
+      }
+      requestAnimationFrame(animateVisual);
+    }
+    animateVisual();
+
+    // Teclado (A S D F G H J K L ; , .)
+    document.addEventListener("keydown", function(e){
+      let noteIdx = NOTES.findIndex(n=>n.code===e.keyCode);
+      if(noteIdx!==-1) {
+        let keyEl = kbDiv.children[noteIdx];
+        if(!keyEl.classList.contains("active")) {
+          keyEl.classList.add("active");
+          playNote(NOTES[noteIdx].freq, NOTES[noteIdx].code);
+          triggerVisual(noteIdx);
+        }
+      }
+    });
+    document.addEventListener("keyup", function(e){
+      let noteIdx = NOTES.findIndex(n=>n.code===e.keyCode);
+      if(noteIdx!==-1) {
+        let keyEl = kbDiv.children[noteIdx];
+        keyEl.classList.remove("active");
+      }
+    });
+    // Clique nas teclas (mobile/desktop)
+    kbDiv.addEventListener("mousedown", function(e){
+      let el = e.target.closest(".key");
+      if(!el) return;
+      let code = +el.getAttribute("data-code");
+      let freq = +el.getAttribute("data-freq");
+      let noteIdx = NOTES.findIndex(n=>n.code===code);
+      el.classList.add("active");
+      playNote(freq, code);
+      triggerVisual(noteIdx);
+    });
+    kbDiv.addEventListener("mouseup", function(e){
+      let el = e.target.closest(".key");
+      if(!el) return;
+      el.classList.remove("active");
+    });
+    kbDiv.addEventListener("mouseleave", function(e){
+      let el = e.target.closest(".key");
+      if(!el) return;
+      el.classList.remove("active");
+    });
+    // Touch (mobile)
+    kbDiv.addEventListener("touchstart", function(e){
+      let el = e.target.closest(".key");
+      if(!el) return;
+      let code = +el.getAttribute("data-code");
+      let freq = +el.getAttribute("data-freq");
+      let noteIdx = NOTES.findIndex(n=>n.code===code);
+      el.classList.add("active");
+      playNote(freq, code);
+      triggerVisual(noteIdx);
+    },{passive:true});
+    kbDiv.addEventListener("touchend", function(e){
+      let el = e.target.closest(".key");
+      if(!el) return;
+      el.classList.remove("active");
+    },{passive:true});
+  </script>
+</body>
+</html>

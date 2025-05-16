@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Cubo de Rubik Virtual</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root {
+      --size: 330px;
+      --cube-size: calc(var(--size)/3);
+      --dark: #10131a;
+      --face-u: #ffe94d;
+      --face-d: #f9f9f9;
+      --face-f: #59ed64;
+      --face-b: #f45555;
+      --face-l: #3286ed;
+      --face-r: #f9c441;
+      --outline: #292c38;
+      --accent: #38f9d7;
+    }
+    body {
+      background: radial-gradient(ellipse at top, #141d2e 0%, #0c1120 100%);
+      min-height: 100vh;
+      margin: 0;
+      color: #f3f3fa;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+    header {
+      text-align: center;
+      padding: 2.3rem 1rem 0.8rem 1rem;
+    }
+    header h1 {
+      font-size: 2.35rem;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+    }
+    header p {
+      color: #8ffffc;
+      font-size: 1.05rem;
+      margin-top: 0;
+    }
+    .container {
+      max-width: 640px;
+      margin: 1.8rem auto 0 auto;
+      background: rgba(23,25,36,0.97);
+      border-radius: 1.3rem;
+      padding: 2rem 1.3rem 1.5rem 1.3rem;
+      box-shadow: 0 8px 32px #0b0f1b77;
+      text-align: center;
+    }
+    .rubik-controls {
+      margin-bottom: 1.3rem;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.7rem;
+    }
+    .ctrl-btn {
+      background: var(--accent);
+      color: #212b3a;
+      font-weight: bold;
+      font-size: 1.05rem;
+      border-radius: 1.15rem;
+      padding: 0.53rem 1.2rem;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 9px #3ff7c155;
+      transition: background 0.08s, transform 0.07s;
+    }
+    .ctrl-btn:hover {
+      background: #b6fff7;
+      transform: scale(1.06);
+    }
+    .cube3d-wrap {
+      perspective: 1100px;
+      width: var(--size);
+      height: var(--size);
+      margin: 0 auto 1.2rem auto;
+      touch-action: none;
+      user-select: none;
+    }
+    .cube3d {
+      width: var(--size);
+      height: var(--size);
+      transform-style: preserve-3d;
+      position: relative;
+      transition: transform 0.28s cubic-bezier(.41,1.41,.43,1);
+    }
+    /* Cubie (pequeno bloco) */
+    .cubie {
+      width: var(--cube-size);
+      height: var(--cube-size);
+      position: absolute;
+      transform-style: preserve-3d;
+      transition: transform 0.22s cubic-bezier(.35,1.31,.43,1);
+    }
+    .face {
+      position: absolute;
+      width: var(--cube-size);
+      height: var(--cube-size);
+      background: #181b22;
+      border: 2.4px solid var(--outline);
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .face.sticker {
+      border: 1.3px solid var(--outline);
+      box-shadow: 0 2px 12px #0002;
+      width: 86%;
+      height: 86%;
+      left: 7%;
+      top: 7%;
+      border-radius: 0.32rem;
+    }
+    .face.u { background: var(--face-u); }
+    .face.d { background: var(--face-d); }
+    .face.f { background: var(--face-f); }
+    .face.b { background: var(--face-b); }
+    .face.l { background: var(--face-l); }
+    .face.r { background: var(--face-r); }
+
+    /* Faces */
+    .face0 { transform: rotateY(0deg) translateZ(calc(var(--cube-size)/2)); }   /* Frente */
+    .face1 { transform: rotateY(180deg) translateZ(calc(var(--cube-size)/2)); } /* Trás */
+    .face2 { transform: rotateX(90deg) translateZ(calc(var(--cube-size)/2)); }  /* Cima */
+    .face3 { transform: rotateX(-90deg) translateZ(calc(var(--cube-size)/2)); } /* Baixo */
+    .face4 { transform: rotateY(-90deg) translateZ(calc(var(--cube-size)/2)); } /* Esquerda */
+    .face5 { transform: rotateY(90deg) translateZ(calc(var(--cube-size)/2)); }  /* Direita */
+    @media (max-width: 600px) {
+      :root { --size: 96vw; }
+      .container { padding: 1.1rem 0.1rem 1.1rem 0.1rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Cubo de Rubik Virtual</h1>
+    <p>Gire, embaralhe e tente resolver — clique e arraste para rotacionar o cubo!</p>
+  </header>
+  <div class="container">
+    <div class="rubik-controls">
+      <button class="ctrl-btn" onclick="move('U')">U</button>
+      <button class="ctrl-btn" onclick="move('D')">D</button>
+      <button class="ctrl-btn" onclick="move('F')">F</button>
+      <button class="ctrl-btn" onclick="move('B')">B</button>
+      <button class="ctrl-btn" onclick="move('L')">L</button>
+      <button class="ctrl-btn" onclick="move('R')">R</button>
+      <button class="ctrl-btn" onclick="move('U',true)">U'</button>
+      <button class="ctrl-btn" onclick="move('D',true)">D'</button>
+      <button class="ctrl-btn" onclick="move('F',true)">F'</button>
+      <button class="ctrl-btn" onclick="move('B',true)">B'</button>
+      <button class="ctrl-btn" onclick="move('L',true)">L'</button>
+      <button class="ctrl-btn" onclick="move('R',true)">R'</button>
+      <button class="ctrl-btn" onclick="scramble()">Embaralhar</button>
+      <button class="ctrl-btn" onclick="resetCube()">Restaurar</button>
+    </div>
+    <div class="cube3d-wrap" id="cube3d-wrap">
+      <div class="cube3d" id="cube3d"></div>
+    </div>
+    <div style="color:#7bffe7;font-size:0.98rem;text-align:center;max-width:440px;margin:0 auto;">
+      Dica: Segure e arraste para girar o cubo <span style="font-size:1.12em;">🖱️</span>. <br>
+      Use os botões para girar as faces, embaralhar ou restaurar.
+    </div>
+  </div>
+  <script>
+    // Cores das faces
+    const FACE_COLORS = {
+      U: "u", D: "d", F: "f", B: "b", L: "l", R: "r"
+    };
+    // Estado do cubo: 3x3x3 cubies, cada um com faces
+    let cube = [], origCube = [];
+    function makeCube() {
+      cube = [];
+      for (let x=0;x<3;x++) for (let y=0;y<3;y++) for (let z=0;z<3;z++) {
+        let faces = {};
+        if (z === 2) faces.F = "f";
+        if (z === 0) faces.B = "b";
+        if (y === 0) faces.D = "d";
+        if (y === 2) faces.U = "u";
+        if (x === 0) faces.L = "l";
+        if (x === 2) faces.R = "r";
+        cube.push({ x, y, z, faces: {...faces} });
+      }
+      origCube = JSON.parse(JSON.stringify(cube));
+    }
+    makeCube();
+
+    // Renderização
+    function renderCube() {
+      const cont = document.getElementById('cube3d');
+      cont.innerHTML = '';
+      cube.forEach((cubie, idx) => {
+        let {x, y, z, faces} = cubie;
+        const div = document.createElement('div');
+        div.className = "cubie";
+        let tx = (x-1)*parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cube-size'));
+        let ty = (y-1)*parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cube-size'));
+        let tz = (z-1)*parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cube-size'));
+        div.style.transform = `translate3d(${tx}px,${-ty}px,${tz}px)`;
+        // Seis faces
+        ["F","B","U","D","L","R"].forEach((face,faceIdx) => {
+          if (faces[face]) {
+            const f = document.createElement('div');
+            f.className = `face face${faceIdx}`;
+            // Adiciona sticker colorido
+            const sticker = document.createElement('div');
+            sticker.className = `face sticker ${faces[face]}`;
+            f.appendChild(sticker);
+            div.appendChild(f);
+          }
+        });
+        cont.appendChild(div);
+      });
+    }
+    renderCube();
+
+    // Movimentos básicos (giros de face)
+    function move(face, prime=false) {
+      // Gira uma face (prime = sentido anti-horário)
+      // Faces: U (topo), D (baixo), F (frente), B (trás), L (esquerda), R (direita)
+      // Seleção das cubies da camada
+      let sel;
+      if (face === "U") sel = cube.filter(c=>c.y===2);
+      if (face === "D") sel = cube.filter(c=>c.y===0);
+      if (face === "F") sel = cube.filter(c=>c.z===2);
+      if (face === "B") sel = cube.filter(c=>c.z===0);
+      if (face === "L") sel = cube.filter(c=>c.x===0);
+      if (face === "R") sel = cube.filter(c=>c.x===2);
+
+      // Atualiza posição dos cubies selecionados
+      sel.forEach(cubie=>{
+        let {x,y,z,faces} = cubie;
+        let pos, rot;
+        // Rotação baseada na face
+        if (face==="U"||face==="D") {
+          pos = [cubie.x, cubie.y, cubie.z];
+          rot = prime ? rotateXZ(pos, face==="U"?2:-2) : rotateXZ(pos, face==="U"?-2:2);
+          cubie.x = rot[0]; cubie.z = rot[2];
+          cubie.faces = rotateFaces(faces, (face==="U" ? "U" : "D"), prime ? -1 : 1);
+        } else if (face==="F"||face==="B") {
+          pos = [cubie.x, cubie.y, cubie.z];
+          rot = prime ? rotateXY(pos, face==="F"?-2:2) : rotateXY(pos, face==="F"?2:-2);
+          cubie.x = rot[0]; cubie.y = rot[1];
+          cubie.faces = rotateFaces(faces, (face==="F" ? "F" : "B"), prime ? -1 : 1);
+        } else if (face==="L"||face==="R") {
+          pos = [cubie.x, cubie.y, cubie.z];
+          rot = prime ? rotateYZ(pos, face==="R"?2:-2) : rotateYZ(pos, face==="R"?-2:2);
+          cubie.y = rot[1]; cubie.z = rot[2];
+          cubie.faces = rotateFaces(faces, (face==="R" ? "R" : "L"), prime ? -1 : 1);
+        }
+      });
+      renderCube();
+    }
+    // Rotaciona eixo XZ (para U/D)
+    function rotateXZ([x,y,z], dir) {
+      // dir = +2 ou -2 (sentido horário/anti)
+      let cx=1, cz=1;
+      let nx = Math.round(cx + (x-cx)*Math.cos(dir*Math.PI/4) - (z-cz)*Math.sin(dir*Math.PI/4));
+      let nz = Math.round(cz + (x-cx)*Math.sin(dir*Math.PI/4) + (z-cz)*Math.cos(dir*Math.PI/4));
+      return [nx,y,nz];
+    }
+    // Rotaciona eixo XY (para F/B)
+    function rotateXY([x,y,z], dir) {
+      let cx=1, cy=1;
+      let nx = Math.round(cx + (x-cx)*Math.cos(dir*Math.PI/4) - (y-cy)*Math.sin(dir*Math.PI/4));
+      let ny = Math.round(cy + (x-cx)*Math.sin(dir*Math.PI/4) + (y-cy)*Math.cos(dir*Math.PI/4));
+      return [nx,ny,z];
+    }
+    // Rotaciona eixo YZ (para L/R)
+    function rotateYZ([x,y,z], dir) {
+      let cy=1, cz=1;
+      let ny = Math.round(cy + (y-cy)*Math.cos(dir*Math.PI/4) - (z-cz)*Math.sin(dir*Math.PI/4));
+      let nz = Math.round(cz + (y-cy)*Math.sin(dir*Math.PI/4) + (z-cz)*Math.cos(dir*Math.PI/4));
+      return [x,ny,nz];
+    }
+    // Gira as faces do cubie
+    function rotateFaces(faces, axis, dir) {
+      // axis = qual face está sendo girada; dir = +1 ou -1
+      const mapping = {
+        U: ["F","R","B","L"],
+        D: ["F","L","B","R"],
+        F: ["U","R","D","L"],
+        B: ["U","L","D","R"],
+        L: ["U","F","D","B"],
+        R: ["U","B","D","F"]
+      };
+      let newFaces = {...faces};
+      let m = mapping[axis];
+      if (!m) return faces;
+      if (dir===1) { // horário
+        newFaces[m[0]] = faces[m[3]];
+        newFaces[m[1]] = faces[m[0]];
+        newFaces[m[2]] = faces[m[1]];
+        newFaces[m[3]] = faces[m[2]];
+      } else { // anti-horário
+        newFaces[m[0]] = faces[m[1]];
+        newFaces[m[1]] = faces[m[2]];
+        newFaces[m[2]] = faces[m[3]];
+        newFaces[m[3]] = faces[m[0]];
+      }
+      return newFaces;
+    }
+
+    // Embaralhar
+    function scramble() {
+      let moves = ["U","D","F","B","L","R"];
+      for(let i=0;i<25;i++){
+        move(moves[Math.floor(Math.random()*6)], Math.random()<0.5);
+      }
+    }
+    // Restaurar cubo
+    function resetCube() {
+      cube = JSON.parse(JSON.stringify(origCube));
+      renderCube();
+    }
+
+    // Rotação 3D com mouse
+    let dragging = false, lastX = 0, lastY = 0, rotX = -25, rotY = 38;
+    const cube3d = document.getElementById('cube3d');
+    const wrap = document.getElementById('cube3d-wrap');
+    function updateRot() {
+      cube3d.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+    }
+    updateRot();
+    wrap.addEventListener('mousedown', e=>{
+      dragging = true;
+      lastX = e.clientX; lastY = e.clientY;
+    });
+    document.addEventListener('mouseup', e=>{dragging=false;});
+    document.addEventListener('mousemove', e=>{
+      if(!dragging) return;
+      rotY += (e.clientX-lastX)*0.7;
+      rotX += (e.clientY-lastY)*0.7;
+      if(rotX>90) rotX=90;
+      if(rotX<-90) rotX=-90;
+      lastX = e.clientX; lastY = e.clientY;
+      updateRot();
+    });
+    // Touch para mobile
+    let lastTouch = null;
+    wrap.addEventListener('touchstart', e=>{
+      dragging=true;
+      lastTouch = e.touches[0];
+    });
+    wrap.addEventListener('touchmove', e=>{
+      if(!dragging) return;
+      let t = e.touches[0];
+      rotY += (t.clientX-lastTouch.clientX)*0.8;
+      rotX += (t.clientY-lastTouch.clientY)*0.8;
+      if(rotX>90) rotX=90;
+      if(rotX<-90) rotX=-90;
+      lastTouch = t;
+      updateRot();
+      e.preventDefault();
+    });
+    wrap.addEventListener('touchend', e=>{dragging=false;});
+
+    // Teclado: girar cubo
+    document.addEventListener('keydown', e=>{
+      const map = {
+        ArrowUp: ()=>{rotX-=12; updateRot();},
+        ArrowDown: ()=>{rotX+=12; updateRot();},
+        ArrowLeft: ()=>{rotY-=12; updateRot();},
+        ArrowRight: ()=>{rotY+=12; updateRot();},
+        u: ()=>move('U'), d: ()=>move('D'), f: ()=>move('F'),
+        b: ()=>move('B'), l: ()=>move('L'), r: ()=>move('R')
+      };
+      if(map[e.key]) map[e.key]();
+    });
+  </script>
+</body>
+</html>

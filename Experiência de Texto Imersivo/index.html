@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Experiência de Texto Imersivo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root {
+      --bg: #18182c;
+      --panel: #232242;
+      --accent: #75f1ed;
+      --story: #fff6f8;
+      --choice: #ffe47e;
+      --highlight: #fc7e9d;
+      --shadow: #0004;
+    }
+    body {
+      background: linear-gradient(120deg, #25254d 0%, #18182c 100%);
+      color: var(--story);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    header {
+      text-align: center;
+      padding: 2.2rem 1rem 1.2rem 1rem;
+    }
+    header h1 {
+      font-size: 2.23rem;
+      color: var(--accent);
+      margin-bottom: 0.2rem;
+      letter-spacing: 1px;
+    }
+    header p {
+      color: #95f0ec;
+      font-size: 1.08rem;
+      margin-top: 0;
+    }
+    .container {
+      max-width: 630px;
+      margin: 2.3rem auto 0 auto;
+      background: rgba(35,34,66,0.98);
+      border-radius: 1.6rem;
+      padding: 2.2rem 1.2rem 2.5rem 1.2rem;
+      box-shadow: 0 8px 32px #19172999;
+      min-height: 320px;
+      position: relative;
+      overflow: hidden;
+    }
+    .story-text {
+      font-size: 1.23rem;
+      line-height: 1.65;
+      color: var(--story);
+      margin-bottom: 2.3rem;
+      min-height: 8.2rem;
+      letter-spacing: 0.2px;
+      transition: opacity 0.4s;
+      opacity: 1;
+      text-shadow: 0 2px 12px var(--shadow);
+    }
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 1.1rem;
+      align-items: stretch;
+    }
+    .choice-btn {
+      background: var(--choice);
+      color: #1b192d;
+      font-weight: bold;
+      font-size: 1.11rem;
+      border-radius: 1.2rem;
+      border: none;
+      padding: 0.9rem 1.5rem;
+      cursor: pointer;
+      box-shadow: 0 2px 16px #ffe47e42;
+      transition: background 0.1s, color 0.09s, transform 0.11s;
+      text-align: left;
+      line-height: 1.3;
+    }
+    .choice-btn:hover, .choice-btn.selected {
+      background: var(--highlight);
+      color: #fff;
+      transform: scale(1.04);
+    }
+    .ending {
+      text-align: center;
+      font-size: 1.22rem;
+      color: var(--accent);
+      margin-top: 2.1rem;
+      font-style: italic;
+      opacity: 0.97;
+      min-height: 3.1rem;
+      letter-spacing: 0.3px;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 1.1rem 0.2rem 1.3rem 0.2rem; }
+      .story-text { font-size: 1.02rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Experiência de Texto Imersivo</h1>
+    <p>Escolha seu caminho: cada decisão leva a um novo destino. Experimente a narrativa interativa.</p>
+  </header>
+  <div class="container">
+    <div class="story-text" id="storyText"></div>
+    <div class="choices" id="choices"></div>
+    <div class="ending" id="ending"></div>
+  </div>
+  <script>
+    // Estrutura da história: cada nó possui texto, escolhas (array: texto e próximo id), ou final.
+    const STORY = {
+      0: {
+        text: "Você acorda numa floresta misteriosa, onde a névoa dança entre árvores retorcidas. Uma trilha se abre à sua frente, mas, ao fundo, uma luz bruxuleante parece chamar por você.",
+        choices: [
+          { text: "Seguir pela trilha.", next: 1 },
+          { text: "Ir em direção à luz.", next: 2 }
+        ]
+      },
+      1: {
+        text: "A trilha leva a um velho portão coberto de símbolos antigos. O silêncio é profundo. Você percebe duas opções: bater no portão, ou procurar outro caminho pela mata.",
+        choices: [
+          { text: "Bater no portão.", next: 3 },
+          { text: "Procurar outro caminho.", next: 4 }
+        ]
+      },
+      2: {
+        text: "A luz é uma chama azulada sobre uma pedra. Ao se aproximar, ela flutua e sussurra enigmas. Você sente que pode tentar decifrar o enigma ou tocar a chama.",
+        choices: [
+          { text: "Tentar decifrar o enigma.", next: 5 },
+          { text: "Tocar a chama.", next: 6 }
+        ]
+      },
+      3: {
+        text: "O portão range e se abre sozinho. Além dele, uma cidade perdida de torres douradas surge sob o sol. Guardiões de olhos brilhantes sorriem para você.",
+        ending: "Parabéns! Você descobriu a Cidade Oculta e tornou-se seu novo guardião."
+      },
+      4: {
+        text: "Entre galhos e sombras, você cai em uma armadilha antiga. Cordas se apertam, mas, de repente, uma coruja gigante aparece e corta as cordas.",
+        choices: [
+          { text: "Subir nas costas da coruja.", next: 7 },
+          { text: "Fugir correndo.", next: 8 }
+        ]
+      },
+      5: {
+        text: "Você entende o enigma: 'Só quem ouve o silêncio pode atravessar.' Fecha os olhos e ouve o silêncio da floresta. De repente, é transportado para um jardim suspenso.",
+        ending: "Você alcançou o Jardim dos Sussurros — onde a paz reina para sempre em seu coração."
+      },
+      6: {
+        text: "A chama envolve sua mão, mas não queima. Você sente memórias de vidas passadas e enxerga todos os caminhos possíveis diante de si.",
+        ending: "Ao tocar a chama, você despertou o poder de moldar seu próprio destino. Fim — ou seria um novo começo?"
+      },
+      7: {
+        text: "A coruja voa alto, levando você sobre montanhas e rios brilhantes. Lá do alto, você avista um castelo flutuante.",
+        choices: [
+          { text: "Pedir para pousar no castelo.", next: 9 },
+          { text: "Continuar voando.", next: 10 }
+        ]
+      },
+      8: {
+        text: "Você foge pela floresta e, após correr por muito tempo, encontra um lago espelhado. Na superfície, vê um reflexo que não é o seu.",
+        ending: "O lago revela verdades ocultas — e você descobre uma nova identidade dentro de si mesmo."
+      },
+      9: {
+        text: "No castelo, é recebido por uma corte de criaturas mágicas. Um banquete está servido, e todos celebram sua chegada.",
+        ending: "Você foi coroado como hóspede de honra do Reino dos Céus. Celebração eterna!"
+      },
+      10: {
+        text: "A coruja leva você além do horizonte. Pouco a pouco, a paisagem se dissolve em névoa dourada, e você sente um profundo sentimento de liberdade.",
+        ending: "Sua jornada nunca terá fim: liberdade e aventura para sempre!"
+      }
+    };
+
+    let state = { node: 0, locked: false };
+
+    function renderStory() {
+      const node = STORY[state.node];
+      const storyDiv = document.getElementById("storyText");
+      const choicesDiv = document.getElementById("choices");
+      const endingDiv = document.getElementById("ending");
+
+      // Fade out old text
+      storyDiv.style.opacity = 0.3;
+      setTimeout(() => {
+        storyDiv.textContent = node.text;
+        storyDiv.style.opacity = 1;
+      }, 220);
+
+      choicesDiv.innerHTML = "";
+      endingDiv.innerHTML = "";
+
+      if (node.ending) {
+        setTimeout(() => {
+          endingDiv.textContent = node.ending;
+        }, 300);
+        return;
+      }
+
+      node.choices.forEach((choice, idx) => {
+        let btn = document.createElement("button");
+        btn.className = "choice-btn";
+        btn.textContent = choice.text;
+        btn.onclick = () => {
+          if (state.locked) return;
+          state.locked = true;
+          btn.classList.add("selected");
+          setTimeout(() => {
+            state.node = choice.next;
+            state.locked = false;
+            renderStory();
+          }, 330);
+        };
+        choicesDiv.appendChild(btn);
+      });
+    }
+    renderStory();
+  </script>
+</body>
+</html>

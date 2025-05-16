@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Relógio Temporal Surrealista</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root {
+      --bg: #17152c;
+      --panel: #262042;
+      --accent: #ffc5f6;
+      --dream: #85f9e5;
+      --poetic: #e1ec73;
+      --clock: #fff7fd;
+    }
+    body {
+      background: linear-gradient(120deg, #252554 0%, #17152c 100%);
+      color: var(--clock);
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+    }
+    header {
+      text-align: center;
+      padding: 2.2rem 1rem 1.2rem 1rem;
+    }
+    header h1 {
+      font-size: 2.3rem;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+      letter-spacing: 1px;
+    }
+    header p {
+      color: #dbcbff;
+      font-size: 1.08rem;
+      margin-top: 0;
+    }
+    .container {
+      max-width: 520px;
+      margin: 2.7rem auto 0 auto;
+      background: rgba(38,32,66,0.97);
+      border-radius: 1.7rem;
+      padding: 2.1rem 1.2rem 2.4rem 1.2rem;
+      box-shadow: 0 8px 32px #20154277;
+      min-height: 330px;
+    }
+    .clock-block {
+      text-align: center;
+      margin-bottom: 2.3rem;
+      padding: 1.4rem 0 1.1rem 0;
+      border-radius: 1.2rem;
+      background: rgba(22,20,44,0.82);
+      box-shadow: 0 2px 14px #201a2e44;
+      transition: background 0.4s;
+    }
+    .label {
+      font-size: 1.07rem;
+      margin-bottom: 0.7rem;
+      letter-spacing: 0.3px;
+      font-weight: bold;
+    }
+    .clock-time {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 2.45rem;
+      letter-spacing: 2.2px;
+      font-weight: bold;
+      margin-bottom: 0.7rem;
+      text-shadow: 0 2px 16px #fff3;
+      transition: color 0.4s;
+      color: var(--clock);
+    }
+    .clock-time.dream {
+      color: var(--dream);
+      text-shadow: 0 2px 16px #77f7d088, 0 0 4px #9ffffb42;
+    }
+    .clock-time.poetic {
+      color: var(--poetic);
+      text-shadow: 0 2px 16px #fffec470, 0 0 4px #f8fa7b42;
+    }
+    .phrase {
+      font-size: 1.1rem;
+      font-style: italic;
+      margin-top: 0.5rem;
+      color: #eec9fa;
+      min-height: 1.5rem;
+      letter-spacing: 0.2px;
+      transition: color 0.3s;
+    }
+    .phrase.poetic { color: #fffda2; }
+    .phrase.dream { color: #7ffff0; }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 0.9rem;
+      margin-top: 2.1rem;
+    }
+    .ctrl-btn {
+      background: var(--accent);
+      color: #22173d;
+      font-weight: bold;
+      font-size: 1.07rem;
+      border-radius: 1.2rem;
+      padding: 0.6rem 1.4rem;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 9px #ffc5f655;
+      transition: background 0.09s, transform 0.07s;
+    }
+    .ctrl-btn:hover {
+      background: #ffe7fa;
+      transform: scale(1.07);
+    }
+    @media (max-width: 600px) {
+      .container { padding: 1.1rem 0.2rem 1.4rem 0.2rem; }
+      .clock-time { font-size: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Relógio Temporal Surrealista</h1>
+    <p>Descubra o tempo real, o tempo dos sonhos e o tempo poético — cada um com seu próprio ritmo e significado.</p>
+  </header>
+  <div class="container">
+    <div class="clock-block" style="border:2px solid var(--accent);">
+      <div class="label">Tempo Real</div>
+      <div class="clock-time" id="realClock"></div>
+      <div class="phrase" id="realPhrase"></div>
+    </div>
+    <div class="clock-block" style="border:2px solid var(--dream);">
+      <div class="label" style="color:var(--dream);">Tempo dos Sonhos</div>
+      <div class="clock-time dream" id="dreamClock"></div>
+      <div class="phrase dream" id="dreamPhrase"></div>
+    </div>
+    <div class="clock-block" style="border:2px solid var(--poetic);">
+      <div class="label" style="color:var(--poetic);">Tempo Poético</div>
+      <div class="clock-time poetic" id="poeticClock"></div>
+      <div class="phrase poetic" id="poeticPhrase"></div>
+    </div>
+    <div class="controls">
+      <button class="ctrl-btn" onclick="randomizeDream()">⏩ Acelerar Sonho</button>
+      <button class="ctrl-btn" onclick="randomizePoetic()">🎲 Novo Fluxo Poético</button>
+    </div>
+  </div>
+  <script>
+    // Frases para cada tempo
+    const PHRASES_REAL = [
+      "O presente escorre como areia fina.",
+      "O agora é tudo o que existe.",
+      "Cada segundo conta uma história única.",
+      "O tempo real é sempre exato, mas nunca igual."
+    ];
+    const PHRASES_DREAM = [
+      "Aqui o tempo voa, cai ou dança conforme a vontade.",
+      "O relógio dos sonhos não segue regras.",
+      "As horas se esticam e encolhem como pensamentos soltos.",
+      "No mundo dos sonhos, a lógica do tempo se dissolve.",
+      "Minutos podem ser eternos, ou segundos — quem decide?"
+    ];
+    const PHRASES_POETIC = [
+      "Às vezes o tempo anda para trás só para relembrar sorrisos.",
+      "O ponteiro do poético vagueia entre memórias e possibilidades.",
+      "No tempo da poesia, o relógio hesita e flutua.",
+      "A eternidade pode caber em um instante delicado.",
+      "Entre suspiros, o tempo se perde e se reinventa."
+    ];
+
+    // Tempo dos Sonhos: avança com velocidade e direção aleatória
+    let dreamBase = Date.now();
+    let dreamTime = 0, dreamSpeed = 1.6, dreamDir = 1;
+    let lastDreamUpdate = Date.now();
+
+    // Tempo Poético: pode avançar, parar, retroceder, saltar
+    let poeticBase = Date.now();
+    let poeticTime = 0;
+    let poeticMode = 1, poeticDelta = 1.2;
+    let poeticDirection = 1;
+    let poeticFrozen = false;
+
+    function pad(n) { return n<10 ? "0"+n : n; }
+    function msToClock(ms) {
+      let d = new Date(ms);
+      let h = pad(d.getHours()), m = pad(d.getMinutes()), s = pad(d.getSeconds());
+      return `${h}:${m}:${s}`;
+    }
+    function random(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+
+    function updateClocks() {
+      // Tempo real
+      let now = new Date();
+      document.getElementById('realClock').textContent =
+        pad(now.getHours())+":"+pad(now.getMinutes())+":"+pad(now.getSeconds());
+      // Troca frase de vez em quando
+      if(now.getSeconds()%17===0) document.getElementById('realPhrase').textContent = random(PHRASES_REAL);
+
+      // Tempo dos Sonhos
+      let dt = (Date.now()-lastDreamUpdate)/1000;
+      dreamTime += dt * dreamSpeed * dreamDir * 1000;
+      lastDreamUpdate = Date.now();
+      document.getElementById('dreamClock').textContent = msToClock(dreamBase+dreamTime);
+      if(Math.random()<0.03) document.getElementById('dreamPhrase').textContent = random(PHRASES_DREAM);
+
+      // Tempo Poético
+      if (!poeticFrozen) poeticTime += poeticDirection * poeticDelta * (500 + Math.random()*700) * 0.001;
+      let poeticDisplay = poeticBase + poeticTime*1000;
+      document.getElementById('poeticClock').textContent = msToClock(poeticDisplay);
+      if(Math.random()<0.06) document.getElementById('poeticPhrase').textContent = random(PHRASES_POETIC);
+
+      requestAnimationFrame(updateClocks);
+    }
+    // Acelera ou inverte o tempo dos sonhos
+    function randomizeDream() {
+      dreamSpeed = 0.2 + Math.random()*3.2;
+      dreamDir = Math.random()<0.7?1:-1;
+      document.getElementById('dreamPhrase').textContent = (dreamDir>0?"O tempo acelera.":"O tempo volta atrás.")+" "+random(PHRASES_DREAM);
+    }
+    // Altera o fluxo poético
+    function randomizePoetic() {
+      poeticDelta = 0.5 + Math.random()*2.6;
+      poeticDirection = Math.random()<0.5?1:-1;
+      poeticFrozen = Math.random()<0.16;
+      document.getElementById('poeticPhrase').textContent = poeticFrozen
+        ? "O tempo poético repousa, absorvendo o instante."
+        : (poeticDirection>0?"O tempo desliza para o futuro.":"O tempo resgata o passado.")+" "+random(PHRASES_POETIC);
+    }
+
+    // Inicialização
+    function init() {
+      document.getElementById('realPhrase').textContent = random(PHRASES_REAL);
+      document.getElementById('dreamPhrase').textContent = random(PHRASES_DREAM);
+      document.getElementById('poeticPhrase').textContent = random(PHRASES_POETIC);
+      lastDreamUpdate = Date.now();
+      updateClocks();
+    }
+    init();
+  </script>
+</body>
+</html>

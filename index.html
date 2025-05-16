@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Experiências Interativas - Portal</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="c8a2fcb2-9e6c-4253-9da8-95f00282f95a.png">
+  <style>
+    :root {
+      --bg: #181b29;
+      --accent: #7bf7fb;
+      --card1: linear-gradient(135deg, #3d3f70 60%, #54ffe4 120%);
+      --card2: linear-gradient(135deg, #222b47 50%, #ffc5f6 130%);
+      --card3: linear-gradient(135deg, #232830 65%, #ffe47e 120%);
+      --card4: linear-gradient(135deg, #292e49 50%, #adffe6 120%);
+      --card5: linear-gradient(135deg, #171b2a 60%, #e1ec73 140%);
+      --card6: linear-gradient(135deg, #233a35 65%, #b5caff 130%);
+      --card7: linear-gradient(135deg, #3f2946 55%, #fcad8b 120%);
+      --card8: linear-gradient(135deg, #25324d 60%, #f9a8d4 120%);
+      --card9: linear-gradient(135deg, #141f37 65%, #38f9d7 140%);
+      --card10: linear-gradient(135deg, #292c38 55%, #ffe075 120%);
+      --shadow: 0 8px 32px #0007, 0 2px 8px #7bf7fb22;
+    }
+    body {
+      background: radial-gradient(circle at 60% 40%, #232949 0%, #181b29 100%);
+      min-height: 100vh;
+      margin: 0;
+      color: #f5f8ff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      text-align: center;
+      margin-top: 2.5rem;
+      margin-bottom: 2rem;
+    }
+    header h1 {
+      font-size: 2.45rem;
+      font-weight: bold;
+      letter-spacing: 0.7px;
+      color: var(--accent);
+      margin-bottom: 0.32rem;
+      text-shadow: 0 4px 16px #7bf7fb66;
+    }
+    header p {
+      font-size: 1.12rem;
+      color: #b8eaff;
+      opacity: 0.85;
+      margin-top: 0;
+      margin-bottom: 0;
+      letter-spacing: 0.13px;
+    }
+    .grid {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      gap: 2.4rem;
+    }
+    .card-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: center;
+    }
+    .card {
+      width: 210px;
+      min-height: 128px;
+      background: var(--card1);
+      border-radius: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow);
+      color: #fff;
+      font-size: 1.13rem;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      letter-spacing: 0.1px;
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+      border: none;
+      transition: 
+        box-shadow 0.19s, 
+        transform 0.19s cubic-bezier(.5,1.6,.44,1),
+        background 0.44s cubic-bezier(.6,.8,.43,1.4),
+        color 0.18s;
+      filter: brightness(0.98) saturate(1.07);
+      opacity: 0.96;
+    }
+    .card:after {
+      content: '';
+      display: block;
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      border-radius: 1.2rem;
+      background: linear-gradient(120deg, #fff 0%, #fff 100%);
+      transition: opacity 0.25s;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .card:hover, .card:focus-visible {
+      box-shadow: 0 10px 42px #7bf7fb33, 0 2px 12px #fff4;
+      transform: scale(1.055) translateY(-6px) rotateZ(-1.2deg);
+      color: #181b29;
+      filter: brightness(1.04) saturate(1.09);
+      opacity: 1;
+    }
+    .card:hover:after, .card:focus-visible:after {
+      opacity: 0.15;
+    }
+    .card .icon {
+      font-size: 2.3rem;
+      margin-bottom: 0.65rem;
+      opacity: 0.82;
+      filter: drop-shadow(0 4px 7px #fff2);
+    }
+    .card1 { background: var(--card1); }
+    .card2 { background: var(--card2); }
+    .card3 { background: var(--card3); }
+    .card4 { background: var(--card4); }
+    .card5 { background: var(--card5); color: #222; }
+    .card6 { background: var(--card6); color: #222; }
+    .card7 { background: var(--card7); }
+    .card8 { background: var(--card8); }
+    .card9 { background: var(--card9); color: #222; }
+    .card10 { background: var(--card10); color: #222; }
+
+    @media (max-width: 1024px) {
+      .card-row { flex-wrap: wrap; gap: 1.2rem; }
+      .card { width: 44vw; min-width: 142px; font-size: 1.01rem; }
+    }
+    @media (max-width: 600px) {
+      header { margin-top: 1.2rem; margin-bottom: 1.3rem; }
+      .grid { gap: 1.3rem; }
+      .card-row { gap: 0.7rem; }
+      .card { width: 90vw; min-width: 115px; font-size: 0.97rem; min-height: 73px; }
+      .icon { font-size: 1.3rem; }
+    }
+    .footer {
+      text-align: center;
+      margin: 2.8rem auto 1.1rem auto;
+      color: #7bf7fb94;
+      font-size: 1.03rem;
+      letter-spacing: 0.12px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Experiências Interativas</h1>
+    <p>Escolha e explore dez ideias criativas — clique em qualquer card!</p>
+  </header>
+  <main>
+    <div class="grid">
+      <div class="card-row">
+        <a class="card card1" href="Cartomante Digital/index.html" tabindex="1">
+          <div class="icon">🔮</div>
+          Cartomante Digital
+        </a>
+        <a class="card card2" href="Cubo de Rubik Virtual/index.html" tabindex="2">
+          <div class="icon">🟩🟨🟦</div>
+          Cubo de Rubik Virtual
+        </a>
+        <a class="card card3" href="Experiência de Texto Imersivo/index.html" tabindex="3">
+          <div class="icon">📖</div>
+          Experiência de Texto Imersivo
+        </a>
+        <a class="card card4" href="Gerador de Mapas de Mundos Fantásticos/index.html" tabindex="4">
+          <div class="icon">🗺️</div>
+          Gerador de Mapas de Mundos Fantásticos
+        </a>
+        <a class="card card5" href="Gerador de Palavras Inexistentes/index.html" tabindex="5">
+          <div class="icon">✍️</div>
+          Gerador de Palavras Inexistentes
+        </a>
+      </div>
+      <div class="card-row">
+        <a class="card card6" href="Gerador de Universos Aleatórios/index.html" tabindex="6">
+          <div class="icon">🌌</div>
+          Gerador de Universos Aleatórios
+        </a>
+        <a class="card card7" href="Museu Interativo de Obras Digitais/index.html" tabindex="7">
+          <div class="icon">🖼️</div>
+          Museu Interativo de Obras Digitais
+        </a>
+        <a class="card card8" href="Relógio Temporal Surrealista/index.html" tabindex="8">
+          <div class="icon">⏳</div>
+          Relógio Temporal Surrealista
+        </a>
+        <a class="card card9" href="Simulador de Vida em Pixel/index.html" tabindex="9">
+          <div class="icon">🟩</div>
+          Simulador de Vida em Pixel
+        </a>
+        <a class="card card10" href="Teclado Musical Visual/index.html" tabindex="10">
+          <div class="icon">🎹</div>
+          Teclado Musical Visual
+        </a>
+      </div>
+    </div>
+  </main>
+  <div class="footer">
+    &copy; 2025 | Criado para <b>experiências criativas e interativas</b> <br>
+    by Michel
+  </div>
+</body>
+</html>

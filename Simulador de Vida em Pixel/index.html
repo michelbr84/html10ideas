@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulador de Vida em Pixel</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root {
+      --bg: #181b25;
+      --grid: #262942;
+      --cell: #6ef5ab;
+      --cell-new: #7bf7fb;
+      --cell-old: #fae774;
+      --dead: #2e3255;
+      --accent: #85f;
+    }
+    body {
+      background: var(--bg);
+      color: #f4f5fa;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+    header {
+      text-align: center;
+      padding: 2.1rem 1rem 0.5rem 1rem;
+    }
+    header h1 {
+      font-size: 2.35rem;
+      color: var(--accent);
+      margin-bottom: 0.3rem;
+    }
+    header p {
+      color: #bac3da;
+      font-size: 1.1rem;
+      margin-top: 0;
+    }
+    .container {
+      max-width: 650px;
+      margin: 0 auto;
+      background: rgba(34,34,60,0.96);
+      border-radius: 1.7rem;
+      padding: 2rem 1.3rem 1.2rem 1.3rem;
+      box-shadow: 0 8px 32px rgba(22,30,60,0.23);
+      margin-top: 2.1rem;
+    }
+    #simCanvas {
+      display: block;
+      background: var(--grid);
+      margin: 0 auto 1.3rem auto;
+      border-radius: 0.9rem;
+      box-shadow: 0 2px 16px #0007;
+      border: 2px solid #342e5a;
+      cursor: pointer;
+      touch-action: none;
+      transition: background 0.6s;
+    }
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+    .ctrl-btn, .ctrl-range {
+      background: var(--cell-old);
+      color: #27283a;
+      border: none;
+      font-weight: bold;
+      font-size: 1.01rem;
+      border-radius: 1.1rem;
+      padding: 0.59rem 1.4rem;
+      margin: 0 0.25rem;
+      cursor: pointer;
+      box-shadow: 0 2px 10px #fae77432;
+      transition: background 0.12s, transform 0.07s;
+    }
+    .ctrl-btn.selected, .ctrl-btn:hover {
+      background: var(--accent);
+      color: #fff;
+      transform: scale(1.06);
+    }
+    .ctrl-range {
+      padding: 0.3rem 0.8rem;
+      font-size: 0.98rem;
+    }
+    #generation {
+      color: var(--cell-new);
+      text-align: center;
+      font-size: 1.13rem;
+      margin-bottom: 0.6rem;
+      margin-top: 0.2rem;
+      letter-spacing: 0.3px;
+    }
+    .footer {
+      text-align: center;
+      font-size: 0.97rem;
+      color: #d7f7e477;
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    @media (max-width: 600px) {
+      .container { padding: 1.1rem 0.1rem 1.2rem 0.1rem; }
+      #simCanvas { width: 97vw !important; min-width: 90vw !important; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Simulador de Vida em Pixel</h1>
+    <p>Veja a vida surgir, florescer e desaparecer em uma matriz de pixels. Clique para adicionar ou remover células vivas!</p>
+  </header>
+  <div class="container">
+    <div id="generation"></div>
+    <canvas id="simCanvas" width="480" height="480"></canvas>
+    <div class="controls">
+      <button class="ctrl-btn" id="pauseBtn">⏸️ Pausar</button>
+      <button class="ctrl-btn" id="clearBtn">🧹 Limpar</button>
+      <button class="ctrl-btn" id="randomBtn">✨ Aleatório</button>
+      <label>
+        Velocidade:
+        <input class="ctrl-range" id="speedRange" type="range" min="30" max="800" value="180">
+      </label>
+    </div>
+  </div>
+  <div class="footer">
+    Clique ou arraste na grade para adicionar vida. <br>
+    ⏸️ Pausar/Continuar &bull; 🧹 Limpar &bull; ✨ Preencher Aleatoriamente <br>
+    &copy; 2025 Simulador de Vida em Pixel
+  </div>
+  <script>
+    // Tamanho da grade e célula
+    let gridSize = 48, cellSize = 10;
+    let width = gridSize*cellSize, height = gridSize*cellSize;
+    const canvas = document.getElementById('simCanvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Estado do mundo
+    let world = Array.from({length: gridSize}, () =>
+      Array.from({length: gridSize}, () => ({alive:0, age:0, newCell:0}))
+    );
+    let nextWorld = JSON.parse(JSON.stringify(world));
+    let paused = false;
+    let generation = 0;
+    let speed = 180;
+    let running = true;
+
+    // Inicialização
+    function drawGrid() {
+      ctx.fillStyle = "var(--grid)";
+      ctx.fillRect(0,0,width,height);
+      // Grade sutil
+      ctx.strokeStyle = "#27283e";
+      ctx.lineWidth = 1;
+      for(let i=0;i<=gridSize;i++){
+        ctx.beginPath();
+        ctx.moveTo(i*cellSize,0);
+        ctx.lineTo(i*cellSize,height);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0,i*cellSize);
+        ctx.lineTo(width,i*cellSize);
+        ctx.stroke();
+      }
+    }
+    function drawWorld() {
+      drawGrid();
+      for(let y=0;y<gridSize;y++) for(let x=0;x<gridSize;x++) {
+        const cell = world[y][x];
+        if(cell.alive){
+          ctx.beginPath();
+          ctx.rect(x*cellSize+1.5, y*cellSize+1.5, cellSize-3, cellSize-3);
+          if(cell.newCell) {
+            ctx.fillStyle = "var(--cell-new)";
+          } else if(cell.age>10) {
+            ctx.fillStyle = "var(--cell-old)";
+          } else {
+            ctx.fillStyle = "var(--cell)";
+          }
+          ctx.shadowBlur = cell.newCell ? 8 : 0;
+          ctx.shadowColor = "#b6fff7";
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      }
+    }
+    function stepWorld() {
+      let changes = 0;
+      for(let y=0;y<gridSize;y++) for(let x=0;x<gridSize;x++) {
+        let cell = world[y][x];
+        let neighbors = 0;
+        for(let dy=-1;dy<=1;dy++) for(let dx=-1;dx<=1;dx++) {
+          if(dx===0&&dy===0)continue;
+          let ny=(y+dy+gridSize)%gridSize, nx=(x+dx+gridSize)%gridSize;
+          if(world[ny][nx].alive) neighbors++;
+        }
+        let aliveNext = cell.alive;
+        let wasNew = cell.newCell;
+        if(cell.alive) {
+          if(neighbors<2 || neighbors>3) aliveNext=0;
+        } else {
+          if(neighbors===3) aliveNext=1;
+        }
+        nextWorld[y][x] = {
+          alive: aliveNext,
+          age: aliveNext ? cell.age+1 : 0,
+          newCell: (!cell.alive && aliveNext) ? 1 : (aliveNext ? 0 : 0)
+        };
+        if(cell.alive!==aliveNext || wasNew) changes++;
+      }
+      // Troca referência
+      [world, nextWorld] = [nextWorld, world];
+      generation++;
+      document.getElementById('generation').textContent = "Geração: " + generation;
+      drawWorld();
+    }
+    function loop() {
+      if(!paused) stepWorld();
+      else drawWorld();
+      if(running) setTimeout(loop, speed);
+    }
+
+    // Interação: mouse
+    let drawing = false, drawValue = 1;
+    canvas.addEventListener("mousedown", e=>{
+      let [x,y] = getCellFromEvent(e);
+      if(x>=0&&y>=0) {
+        world[y][x].alive = world[y][x].alive?0:1;
+        world[y][x].age = 0;
+        world[y][x].newCell = world[y][x].alive?1:0;
+        drawValue = world[y][x].alive;
+        drawing = true;
+        drawWorld();
+      }
+    });
+    canvas.addEventListener("mouseup", e=>{drawing=false;});
+    canvas.addEventListener("mouseleave", e=>{drawing=false;});
+    canvas.addEventListener("mousemove", e=>{
+      if(!drawing)return;
+      let [x,y] = getCellFromEvent(e);
+      if(x>=0&&y>=0) {
+        world[y][x].alive = drawValue;
+        world[y][x].age = 0;
+        world[y][x].newCell = drawValue?1:0;
+        drawWorld();
+      }
+    });
+    function getCellFromEvent(e) {
+      const rect = canvas.getBoundingClientRect();
+      let mx = ((e.touches?e.touches[0].clientX:e.clientX)-rect.left)*canvas.width/rect.width;
+      let my = ((e.touches?e.touches[0].clientY:e.clientY)-rect.top)*canvas.height/rect.height;
+      let x = Math.floor(mx/cellSize);
+      let y = Math.floor(my/cellSize);
+      return [x,y];
+    }
+    // Touch para mobile
+    canvas.addEventListener("touchstart", e=>{drawing=true;let c=getCellFromEvent(e);setCellTouch(c[0],c[1]);});
+    canvas.addEventListener("touchend", e=>{drawing=false;});
+    canvas.addEventListener("touchmove", e=>{if(!drawing)return;let c=getCellFromEvent(e);setCellTouch(c[0],c[1]);e.preventDefault();});
+    function setCellTouch(x,y){
+      if(x>=0&&y>=0) {
+        world[y][x].alive = 1;
+        world[y][x].age = 0;
+        world[y][x].newCell = 1;
+        drawWorld();
+      }
+    }
+
+    // Controles
+    document.getElementById('pauseBtn').onclick = function() {
+      paused = !paused;
+      this.textContent = paused ? "▶️ Continuar" : "⏸️ Pausar";
+    };
+    document.getElementById('clearBtn').onclick = function() {
+      world = Array.from({length: gridSize}, () =>
+        Array.from({length: gridSize}, () => ({alive:0, age:0, newCell:0}))
+      );
+      nextWorld = JSON.parse(JSON.stringify(world));
+      generation = 0;
+      document.getElementById('generation').textContent = "Geração: 0";
+      drawWorld();
+    };
+    document.getElementById('randomBtn').onclick = function() {
+      for(let y=0;y<gridSize;y++) for(let x=0;x<gridSize;x++)
+        world[y][x] = {alive: Math.random()<0.18?1:0, age:0, newCell:1};
+      generation = 0;
+      document.getElementById('generation').textContent = "Geração: 0";
+      drawWorld();
+    };
+    document.getElementById('speedRange').oninput = function() {
+      speed = parseInt(this.value,10);
+      this.title = "Velocidade: " + speed + "ms";
+    };
+
+    // Responsivo
+    function resizeCanvas() {
+      let size = Math.min(window.innerWidth, 480, window.innerHeight*0.6);
+      canvas.width = canvas.height = size;
+      cellSize = size / gridSize;
+      width = height = size;
+      drawWorld();
+    }
+    window.onresize = resizeCanvas;
+    resizeCanvas();
+
+    // Inicialização
+    drawWorld();
+    loop();
+  </script>
+</body>
+</html>

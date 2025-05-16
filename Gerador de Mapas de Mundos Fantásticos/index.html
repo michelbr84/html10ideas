@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Gerador de Mapas de Mundos Fantásticos</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    :root {
+      --bg: #151b2d;
+      --panel: #2c2e45;
+      --accent: #ffe47e;
+      --label: #a4ffde;
+      --legend: #ffe8b2;
+      --city: #b5caff;
+      --poi: #fcad8b;
+    }
+    body {
+      background: radial-gradient(ellipse at bottom, #20254d 0%, var(--bg) 100%);
+      color: #f5f6ff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+    }
+    header {
+      text-align: center;
+      padding: 2.1rem 1rem 0.7rem 1rem;
+    }
+    header h1 {
+      font-size: 2.2rem;
+      color: var(--accent);
+      margin-bottom: 0.35rem;
+    }
+    header p {
+      color: #f4f1d2;
+      font-size: 1.1rem;
+      margin-top: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 2.5rem auto 0 auto;
+      background: rgba(44,46,69,0.98);
+      border-radius: 1.6rem;
+      padding: 2rem 1.3rem 2.3rem 1.3rem;
+      box-shadow: 0 8px 32px #0b153744;
+      min-height: 310px;
+    }
+    .map-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 1.2rem;
+    }
+    #mapCanvas {
+      display: block;
+      background: #23304e;
+      border-radius: 1.2rem;
+      box-shadow: 0 2px 20px #0005;
+      border: 2px solid #8bb7fd88;
+      margin-bottom: 1.1rem;
+      max-width: 100%;
+    }
+    .world-title {
+      font-size: 1.28rem;
+      color: var(--accent);
+      font-weight: bold;
+      letter-spacing: 0.9px;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 1px 7px #ffe47e33;
+    }
+    .legends, .cities, .pois {
+      margin: 0.2rem 0 0.7rem 0;
+      font-size: 1.07rem;
+      line-height: 1.43;
+      padding-left: 0.7rem;
+    }
+    .legends { color: var(--legend); }
+    .cities { color: var(--city); }
+    .pois { color: var(--poi); }
+    .gen-btn {
+      background: var(--accent);
+      color: #353534;
+      font-weight: bold;
+      font-size: 1.12rem;
+      padding: 0.85rem 2.2rem;
+      border-radius: 1.3rem;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 14px #ffe47e55;
+      margin-top: 1.4rem;
+      transition: background 0.09s, transform 0.07s;
+    }
+    .gen-btn:hover {
+      background: #fff7be;
+      transform: scale(1.05);
+    }
+    @media (max-width: 700px) {
+      .container { padding: 1rem 0.2rem 1.2rem 0.2rem; }
+      #mapCanvas { width: 96vw !important; height: 63vw !important; min-width: 180px !important; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Gerador de Mapas de Mundos Fantásticos</h1>
+    <p>Crie mundos únicos: um novo mapa, nomes, cidades, lendas e pontos mágicos em cada clique!</p>
+  </header>
+  <div class="container">
+    <div class="map-box">
+      <canvas id="mapCanvas" width="450" height="295"></canvas>
+      <div class="world-title" id="worldTitle">Mundo...</div>
+      <div class="legends" id="legendBox"></div>
+      <div class="cities" id="citiesBox"></div>
+      <div class="pois" id="poiBox"></div>
+    </div>
+    <button class="gen-btn" onclick="generateWorld()">Gerar Novo Mapa</button>
+  </div>
+  <script>
+    // Gerador de nomes
+    const WORLD_PREFIX = ["Val", "Ter", "Eld", "Aur", "Nor", "Sol", "Fay", "Bran", "Lum", "Quel", "Thar", "Zar", "Mir", "Vyr", "Glen", "Yar", "Eryl", "Quen"];
+    const WORLD_MIDDLE = ["an", "ir", "or", "en", "ul", "em", "il", "on", "ai", "is", "ur"];
+    const WORLD_SUFFIX = ["doria", "ion", "ara", "eth", "or", "yn", "ael", "un", "est", "os", "ia"];
+    const CITY_PREFIX = ["Bril", "Fal", "Lor", "Ver", "Ril", "Dur", "Pol", "Aer", "Sel", "Gor", "Drim", "Lar", "Wil"];
+    const CITY_SUFFIX = ["dor", "min", "wyn", "tis", "dan", "fall", "len", "nas", "rel", "gon"];
+    const POI_TYPES = ["Torre", "Templo", "Ruína", "Caverna", "Fonte", "Vale", "Monte", "Portal", "Obelisco", "Lago", "Bosque"];
+    const POI_ADJ = ["Antiga", "Sagrada", "Perdida", "Proibida", "Luminescente", "Secreta", "Enfeitiçada", "Sombria", "Dourada", "Cristalina", "Nebulosa"];
+    const LEGENDS = [
+      "Dizem que um dragão dorme sob a ilha.",
+      "Aqui, a lua brilha mesmo durante o dia.",
+      "As águas deste lugar curam todas as feridas.",
+      "Nenhum pássaro ousa voar sobre este vale.",
+      "A cidade desaparece sob névoa toda noite.",
+      "Um portal oculto conecta este mundo a outros.",
+      "O tempo flui ao contrário nas montanhas.",
+      "Criaturas mágicas guardam os limites do bosque.",
+      "As ruínas sussurram o passado aos corajosos.",
+      "Quem bebe da fonte vê o próprio futuro.",
+      "Um antigo rei jaz sob o lago cristalino."
+    ];
+
+    function random(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+
+    function genName(prefix, mid, suf) {
+      let name = random(prefix) + (Math.random()<0.8?random(mid):"") + random(suf);
+      return name.charAt(0).toUpperCase() + name.slice(1);
+    }
+
+    function genWorldName() {
+      return genName(WORLD_PREFIX, WORLD_MIDDLE, WORLD_SUFFIX);
+    }
+
+    function genCity() {
+      return genName(CITY_PREFIX, WORLD_MIDDLE, CITY_SUFFIX);
+    }
+
+    function genPOI() {
+      return random(POI_TYPES) + " " + random(POI_ADJ);
+    }
+
+    // Geração do Mapa Procedural (continente/ilha)
+    function drawMap(ctx, w, h, cities, pois) {
+      ctx.clearRect(0,0,w,h);
+      // Fundo oceano
+      let grad = ctx.createLinearGradient(0,0,w,h);
+      grad.addColorStop(0, "#2066a8");
+      grad.addColorStop(1, "#29528a");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0,0,w,h);
+
+      // Massa de terra: polígono ruidoso
+      let cx=w/2, cy=h/2, rBase=Math.min(w,h)*0.37;
+      ctx.save();
+      ctx.beginPath();
+      let pts = [];
+      let noiseSeed = Math.random()*1000;
+      for(let i=0;i<=40;i++){
+        let ang = i/40 * Math.PI*2;
+        // Forma irregular usando ruído perlin simples (sin+cos random)
+        let r = rBase * (0.81 + Math.sin(ang*3+noiseSeed)*0.13 + Math.cos(ang*2.2+noiseSeed*0.7)*0.14 + Math.random()*0.08);
+        let x = cx + Math.cos(ang)*r;
+        let y = cy + Math.sin(ang)*r;
+        if(i===0) ctx.moveTo(x,y);
+        else ctx.lineTo(x,y);
+        pts.push([x,y]);
+      }
+      ctx.closePath();
+      // Sombreamento e textura
+      ctx.shadowColor = "#1a1514bb";
+      ctx.shadowBlur = 19;
+      ctx.fillStyle = "#ede2bb";
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.restore();
+
+      // Bordas da costa
+      ctx.save();
+      ctx.beginPath();
+      pts.forEach((p,i)=>{ if(i===0) ctx.moveTo(p[0],p[1]); else ctx.lineTo(p[0],p[1]); });
+      ctx.closePath();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = "#e5bb65";
+      ctx.stroke();
+      ctx.restore();
+
+      // Lagos internos
+      for(let l=0;l<2+Math.floor(Math.random()*2);l++){
+        let lx = cx+Math.random()*rBase*0.8-rBase*0.4, ly = cy+Math.random()*rBase*0.7-rBase*0.3;
+        let lr = 16+Math.random()*22;
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(lx,ly,lr,0,Math.PI*2);
+        ctx.fillStyle = "#6dd4e7cc";
+        ctx.shadowColor = "#2ed7f5bb";
+        ctx.shadowBlur = 8;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Montanhas (triângulos cinza)
+      for(let m=0;m<5+Math.floor(Math.random()*4);m++){
+        let ang = Math.random()*Math.PI*2, dist = rBase*0.45*Math.random();
+        let mx = cx + Math.cos(ang)*dist, my = cy + Math.sin(ang)*dist;
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(mx, my);
+        ctx.lineTo(mx-10+Math.random()*15, my-20-Math.random()*13);
+        ctx.lineTo(mx+10+Math.random()*13, my-15-Math.random()*12);
+        ctx.closePath();
+        ctx.fillStyle = "#d7d7e3";
+        ctx.globalAlpha = 0.76;
+        ctx.shadowColor = "#9a98a7";
+        ctx.shadowBlur = 4;
+        ctx.fill();
+        ctx.restore();
+      }
+
+      // Cidades (círculo azul claro)
+      cities.forEach(c=>{
+        let placed = false;
+        let trycount=0;
+        while(!placed && trycount<12) {
+          let ang = Math.random()*Math.PI*2, dist = rBase*0.32+Math.random()*rBase*0.23;
+          let x = cx + Math.cos(ang)*dist;
+          let y = cy + Math.sin(ang)*dist;
+          // Só coloca dentro do continente
+          if(ctx.isPointInPath(x,y)) {
+            c.x=x; c.y=y;
+            placed=true;
+          }
+          trycount++;
+        }
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(c.x,c.y,7,0,Math.PI*2);
+        ctx.fillStyle="#b5caff";
+        ctx.shadowColor="#b2edff";
+        ctx.shadowBlur=6;
+        ctx.fill();
+        ctx.restore();
+        ctx.save();
+        ctx.font="bold 1.07rem 'Segoe UI',Arial";
+        ctx.textAlign="center";
+        ctx.fillStyle="#8aafe9";
+        ctx.shadowBlur=0;
+        ctx.fillText(c.name, c.x, c.y-12);
+        ctx.restore();
+      });
+
+      // Pontos de interesse (estrela ou quadrado laranja)
+      pois.forEach(p=>{
+        let placed=false, trycount=0;
+        while(!placed && trycount<12){
+          let ang = Math.random()*Math.PI*2, dist = rBase*0.12+Math.random()*rBase*0.36;
+          let x = cx + Math.cos(ang)*dist, y = cy + Math.sin(ang)*dist;
+          if(ctx.isPointInPath(x,y)) {
+            p.x=x;p.y=y; placed=true;
+          }
+          trycount++;
+        }
+        ctx.save();
+        ctx.globalAlpha = 0.95;
+        // Estrela ou quadrado
+        if(Math.random()<0.5){
+          // Estrela
+          ctx.beginPath();
+          let spikes=5, r1=7, r2=3.4;
+          for(let i=0;i<spikes*2;i++){
+            let r = i%2===0?r1:r2;
+            let a = i*Math.PI/spikes;
+            ctx.lineTo(p.x+Math.cos(a)*r, p.y+Math.sin(a)*r);
+          }
+          ctx.closePath();
+          ctx.fillStyle="#fcad8b";
+          ctx.shadowBlur=6;
+          ctx.shadowColor="#fcad8b";
+          ctx.fill();
+        } else {
+          // Quadrado
+          ctx.beginPath();
+          ctx.rect(p.x-4,p.y-4,8,8);
+          ctx.fillStyle="#fa9b47";
+          ctx.shadowBlur=4;
+          ctx.shadowColor="#fa9b47";
+          ctx.fill();
+        }
+        ctx.restore();
+        ctx.save();
+        ctx.font="bold 0.93rem 'Segoe UI',Arial";
+        ctx.textAlign="left";
+        ctx.fillStyle="#fcad8b";
+        ctx.shadowBlur=0;
+        ctx.fillText(p.name, p.x+9, p.y+4);
+        ctx.restore();
+      });
+    }
+
+    function generateWorld() {
+      const canvas = document.getElementById('mapCanvas');
+      let w = canvas.width = canvas.offsetWidth || 450;
+      let h = canvas.height = Math.round((canvas.width*295)/450);
+      // Dados do mundo
+      let worldName = genWorldName();
+      let legend = random(LEGENDS);
+
+      // Gera cidades e pontos de interesse
+      let nCities = 2+Math.floor(Math.random()*3);
+      let nPOI = 2+Math.floor(Math.random()*4);
+      let cities = [];
+      let cityNames = [];
+      while (cities.length < nCities) {
+        let cname = genCity();
+        if (!cityNames.includes(cname)) {
+          cities.push({ name: cname });
+          cityNames.push(cname);
+        }
+      }
+      let pois = [];
+      let poiNames = [];
+      while (pois.length < nPOI) {
+        let pname = genPOI();
+        if (!poiNames.includes(pname)) {
+          pois.push({ name: pname });
+          poiNames.push(pname);
+        }
+      }
+
+      drawMap(canvas.getContext('2d'), w, h, cities, pois);
+
+      document.getElementById('worldTitle').textContent = worldName;
+      document.getElementById('legendBox').innerHTML = "🧙‍♂️ <b>Lenda:</b> "+legend;
+      document.getElementById('citiesBox').innerHTML = "🏰 <b>Cidades:</b> "+cities.map(c=>c.name).join(", ");
+      document.getElementById('poiBox').innerHTML = "🌟 <b>Pontos Mágicos:</b> "+pois.map(p=>p.name).join(", ");
+    }
+    // Responsivo
+    window.onresize = () => setTimeout(generateWorld, 500);
+    // Inicialização
+    generateWorld();
+  </script>
+</body>
+</html>
